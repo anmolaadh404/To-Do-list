@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadTodos();
-    
-    const addButton = document.getElementById('add-todo');
+
+   
     const clearButton = document.createElement('button');
     clearButton.textContent = 'Clear All';
     clearButton.id = 'clear-todos';
@@ -23,15 +23,27 @@ function addTodo() {
 
 function createTodoElement(task) {
     const li = document.createElement('li');
-    li.textContent = task;
 
+   
+    const taskSpan = document.createElement('span');
+    taskSpan.textContent = task;
+    taskSpan.className = 'task-text';
 
-    li.addEventListener('click', () => {
-        li.classList.toggle('completed');
-        saveTodos();
+    
+    li.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON') {
+            li.classList.toggle('completed');
+            saveTodos();
+        }
     });
 
     
+    const editButton = document.createElement('button');
+    editButton.textContent = 'Edit';
+    editButton.className = 'edit-btn';
+    editButton.onclick = () => editTask(taskSpan);
+
+   
     const deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete';
     deleteButton.className = 'delete-btn';
@@ -40,15 +52,47 @@ function createTodoElement(task) {
         saveTodos();
     };
 
+    li.appendChild(taskSpan);
+    li.appendChild(editButton);
     li.appendChild(deleteButton);
     return li;
+}
+
+function editTask(taskSpan) {
+    const currentText = taskSpan.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentText;
+    input.className = 'edit-input';
+
+    // Replace the span with the input field
+    taskSpan.replaceWith(input);
+
+    // Save changes on blur or Enter key
+    input.addEventListener('blur', () => saveEdit(input, taskSpan));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveEdit(input, taskSpan);
+        }
+    });
+
+    input.focus();
+}
+
+function saveEdit(input, taskSpan) {
+    const newText = input.value.trim();
+    if (newText !== '') {
+        taskSpan.textContent = newText;
+    }
+    input.replaceWith(taskSpan);
+    saveTodos();
 }
 
 function saveTodos() {
     const todos = [];
     document.querySelectorAll('#todo-list li').forEach(li => {
         todos.push({
-            text: li.firstChild.textContent,
+            text: li.querySelector('.task-text').textContent,
             completed: li.classList.contains('completed')
         });
     });
