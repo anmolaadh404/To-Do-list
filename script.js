@@ -1,7 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadTodos();
 
-   
+    
+    if (Notification.permission !== 'granted') {
+        Notification.requestPermission();
+    }
+
+    
+    startClock();
+
+    
     const clearButton = document.createElement('button');
     clearButton.textContent = 'Clear All';
     clearButton.id = 'clear-todos';
@@ -9,27 +17,42 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('main').appendChild(clearButton);
 });
 
+function startClock() {
+    const clockElement = document.getElementById('clock');
+    function updateClock() {
+        const now = new Date();
+        clockElement.textContent = now.toLocaleTimeString(); 
+    }
+    updateClock(); 
+    setInterval(updateClock, 1000); 
+}
+
 function addTodo() {
     const input = document.getElementById('todo-input');
     const task = input.value.trim();
     if (task === '') return;
 
-    const li = createTodoElement(task);
+    const createdAt = new Date().toLocaleString(); 
+    const reminderTime = prompt('Set a reminder time in minutes (optional):'); 
+
+    const li = createTodoElement(task, createdAt, reminderTime);
     document.getElementById('todo-list').appendChild(li);
 
     saveTodos();
     input.value = '';
 }
 
-function createTodoElement(task) {
+function createTodoElement(task, createdAt, reminderTime) {
     const li = document.createElement('li');
 
-   
     const taskSpan = document.createElement('span');
     taskSpan.textContent = task;
     taskSpan.className = 'task-text';
 
-    
+    const timeSpan = document.createElement('span');
+    timeSpan.textContent = `Created at: ${createdAt}`;
+    timeSpan.className = 'time-text';
+
     li.addEventListener('click', (e) => {
         if (e.target.tagName !== 'BUTTON') {
             li.classList.toggle('completed');
@@ -37,13 +60,11 @@ function createTodoElement(task) {
         }
     });
 
-    
     const editButton = document.createElement('button');
     editButton.textContent = 'Edit';
     editButton.className = 'edit-btn';
     editButton.onclick = () => editTask(taskSpan);
 
-   
     const deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete';
     deleteButton.className = 'delete-btn';
@@ -53,9 +74,28 @@ function createTodoElement(task) {
     };
 
     li.appendChild(taskSpan);
+    li.appendChild(timeSpan);
     li.appendChild(editButton);
     li.appendChild(deleteButton);
+
+    if (reminderTime && !isNaN(reminderTime)) {
+        setTimeout(() => {
+            sendNotification(task);
+        }, reminderTime * 60000); 
+    }
+
     return li;
+}
+
+function sendNotification(task) {
+    if (Notification.permission === 'granted') {
+        new Notification('Task Reminder', {
+            body: `Reminder: "${task}" is due!`,
+            icon: 'https://via.placeholder.com/128'
+        });
+    } else {
+        alert(`Reminder: "${task}" is due!`);
+    }
 }
 
 function editTask(taskSpan) {
@@ -65,10 +105,8 @@ function editTask(taskSpan) {
     input.value = currentText;
     input.className = 'edit-input';
 
-    // Replace the span with the input field
     taskSpan.replaceWith(input);
 
-    // Save changes on blur or Enter key
     input.addEventListener('blur', () => saveEdit(input, taskSpan));
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -93,6 +131,7 @@ function saveTodos() {
     document.querySelectorAll('#todo-list li').forEach(li => {
         todos.push({
             text: li.querySelector('.task-text').textContent,
+            createdAt: li.querySelector('.time-text').textContent.replace('Created at: ', ''),
             completed: li.classList.contains('completed')
         });
     });
@@ -102,7 +141,7 @@ function saveTodos() {
 function loadTodos() {
     const todos = JSON.parse(localStorage.getItem('todos')) || [];
     todos.forEach(todo => {
-        const li = createTodoElement(todo.text);
+        const li = createTodoElement(todo.text, todo.createdAt, null);
         if (todo.completed) {
             li.classList.add('completed');
         }
