@@ -130,3 +130,16 @@ footer p {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
+.time-text {
+    display: block;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+#clock {
+    font-size: 1rem;
+    color: #fff;
+    margin-top: 5px;
+}
